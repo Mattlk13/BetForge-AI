@@ -1,23 +1,47 @@
-name: Deploy to Cloudflare Pages
+name: Cloudflare Pages Manual Fallback
 
 on:
   workflow_dispatch:
+    inputs:
+      approval_reference:
+        description: "Reference to explicit deployment approval"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: betforge-cloudflare-production
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    timeout-minutes: 20
+    environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
       - run: npm install
+      - run: npm audit --audit-level=high
+      - run: npm run typecheck
+      - run: npm test
       - run: npm run build
-      - name: Deploy
+      - name: Verify BetForge-only Cloudflare credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "Missing BetForge CLOUDFLARE_API_TOKEN"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "Missing BetForge CLOUDFLARE_ACCOUNT_ID"; exit 1; }
+      - name: Deploy Pages fallback
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy dist --project-name=betforge-ai
