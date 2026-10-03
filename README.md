@@ -2,38 +2,70 @@
 
 **Forge smarter decisions from the market.**
 
-BetForge AI is a sports intelligence and betting-analysis application. The MVP provides sportsbook-style market research, odds comparison, AI-assisted matchup analysis, deterministic EV/parlay calculations, bet tracking, paper betting, bankroll analytics, and alert configuration.
+BetForge AI is a sports **decision-intelligence** platform. It focuses on price shopping, explainable probability/EV analysis, line movement, closing-line value, disciplined bankroll diagnostics, paper betting, and alerts.
 
-## Important
-BetForge AI does **not** accept or custody real-money wagers. Demo odds in this repository are mock data until licensed data providers are connected.
+BetForge does **not** accept or custody real-money wagers.
 
-## MVP modules
-- Dashboard
-- Games & matchup detail
-- Multi-book odds comparison
-- AI Analyst
-- +EV scanner
-- Arbitrage scanner
-- Parlay calculator
-- Bet Tracker
-- Paper Bets
-- Bankroll analytics
-- Alerts
-- Responsible Play / legal disclaimers
+## Current architecture
+- React + TypeScript + Vite frontend
+- Cloudflare Pages deployment
+- Cloudflare Pages Functions middleware/API
+- provider-neutral sports-data interfaces
+- deterministic mock provider for development
+- tested odds-math core
+- ForgeScore decision-quality model
+- GitHub Actions verification gates
 
-## Stack
-React + TypeScript + Vite. The data/provider layer is intentionally separated so mock providers can later be replaced by licensed odds, scores, news, and AI services.
+## Implemented analytics core
+- American ↔ decimal conversions
+- implied probability
+- expected value
+- parlay pricing
+- market overround
+- multiplicative/additive/power devig
+- Kelly and fractional-Kelly diagnostics
+- arbitrage detection/stake allocation
+- probability and percentage CLV
+- ForgeScore v1
+
+## Provider strategy
+Production data is deliberately isolated behind `OddsProvider`, `ScoresProvider`, `NewsProvider`, and `AnalysisProvider` contracts.
+
+Current research favors testing at least two server-side provider paths before selecting a primary feed. See:
+- `src/providers/README.md`
+- `docs/OPEN_SOURCE_RESEARCH.md`
+- `THIRD_PARTY_NOTICES.md`
+
+Provider credentials must remain server-side.
+
+## Cloudflare
+Production project: `betforge-ai`
+
+Expected Pages configuration:
+- branch: `main`
+- root: repository root
+- build: `npm run build`
+- output: `dist`
+
+`/api/health` reports runtime mode and configured provider names without disclosing credentials.
 
 ## Local development
 ```bash
 npm install
+npm run typecheck
+npm test
 npm run dev
 ```
 
-## Production roadmap
-1. Licensed sports/odds provider integration
-2. Authentication + database
-3. Persistent tracked bets and paper bankrolls
-4. AI analysis service with source-grounded outputs
-5. Notification/alert workers
-6. Compliance/legal review before monetized sportsbook integrations
+## Security boundary
+PBN is a separate project. BetForge mirrors proven security/deployment patterns but does not share PBN code, databases, bindings, or production runtime state. See `SECURITY.md`.
+
+## Next production milestones
+1. green Cloudflare deployment with Pages Functions
+2. dedicated BetForge Cloudflare credentials / environment isolation
+3. first licensed live-odds provider
+4. D1 journal and immutable odds-observation schema
+5. alert pipeline and line-history persistence
+6. authenticated user profiles and paper bankrolls
+7. source-grounded AI Analyst
+8. provider/data-rights and jurisdictional review before monetization
