@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Activity, Bell, Brain, Calculator, ChartNoAxesCombined, CircleDollarSign, Flame, Gauge, LineChart, ShieldCheck, Trophy } from "lucide-react";
 import "./styles.css";
+import { americanToDecimal as decimalOdds, impliedProbability, expectedValue, parlayAmerican } from "./lib/oddsMath";
+import { forgeScore } from "./lib/forgeScore";
 
 type OddsRow = { book:string; spread:string; spreadOdds:number; moneyline:number; total:string; totalOdds:number };
 type Game = { id:number; sport:string; away:string; home:string; start:string; consensus:string; model:number; market:number; edge:number; signal:"Strong"|"Watch"|"Neutral"; odds:OddsRow[] };
@@ -27,12 +29,6 @@ const games: Game[] = [
   ]}
 ];
 
-function impliedProbability(a:number){ return a < 0 ? (-a)/((-a)+100) : 100/(a+100); }
-function decimalOdds(a:number){ return a < 0 ? 1 + 100/(-a) : 1 + a/100; }
-function americanFromDecimal(d:number){ return d >= 2 ? Math.round((d-1)*100) : Math.round(-100/(d-1)); }
-function expectedValue(p:number,a:number,stake=100){ const d=decimalOdds(a); return p*stake*(d-1)-(1-p)*stake; }
-function parlayAmerican(legs:number[]){ return americanFromDecimal(legs.reduce((acc,o)=>acc*decimalOdds(o),1)); }
-
 const nav = [
   ["Dashboard",ChartNoAxesCombined],["Games",Trophy],["Odds",LineChart],["AI Analyst",Brain],
   ["Bet Tracker",Activity],["Paper Bets",CircleDollarSign],["Alerts",Bell],["Bankroll",Gauge]
@@ -44,10 +40,11 @@ function App(){
   const [paperBets,setPaperBets]=useState([{event:"Kansas City @ Jacksonville",pick:"KC -3.5",odds:-110,stake:25,status:"Open"}]);
   const parlay=useMemo(()=>{ const parsed=legs.split(",").map(v=>Number(v.trim())).filter(v=>Number.isFinite(v)&&v!==0); if(!parsed.length)return null; const american=parlayAmerican(parsed); return {american,implied:impliedProbability(american)*100,payout:100*decimalOdds(american)}; },[legs]);
   const selected=games[0];
+  const kcForge = forgeScore({ edgePercent: 4, priceQuality: .92, dataQuality: .86, marketStability: .72, uncertainty: .28, bankrollRisk: .18, correlationRisk: .12 });
 
   const Dashboard=()=> <div className="stack">
     <section className="hero"><div><span className="eyebrow"><Flame size={15}/> BETFORGE AI</span><h1>Forge smarter decisions from the market.</h1><p>BetForge is built around decision intelligence: price shopping, explainable model edges, bankroll discipline, CLV tracking, and fast alerts.</p></div><div className="hero-card"><span className="label">Paper bankroll</span><strong>$1,000.00</strong><small>No real-money custody</small></div></section>
-    <div className="metrics"><Metric label="Best model edge" value="+4.0%" note="Demo probability gap"/><Metric label="Price shop" value="-105" note="Best KC -3.5 demo"/><Metric label="Tracked ROI" value="+7.8%" note="Demo history"/><Metric label="CLV" value="+1.4%" note="Closing-line value"/></div>
+    <div className="metrics"><Metric label="Best model edge" value="+4.0%" note="Demo probability gap"/><Metric label="Price shop" value="-105" note="Best KC -3.5 demo"/><Metric label="Tracked ROI" value="+7.8%" note="Demo history"/><Metric label="ForgeScore" value={kcForge.score+"/100"} note="Decision-quality composite"/></div>
     <div className="grid2"><Card title="Decision feed" icon={<Brain size={18}/>}>{games.map(g=><div className="signal" key={g.id}><div><b>{g.away} @ {g.home}</b><small>{g.sport} • {g.start}</small></div><div className="right"><span className={"pill "+g.signal.toLowerCase()}>{g.signal}</span><b>{g.edge>0?"+":""}{g.edge}%</b></div></div>)}</Card>
     <Card title="Why this is different" icon={<ShieldCheck size={18}/>}><ul><li>Explainable AI shows assumptions, counter-factors, and uncertainty.</li><li>Price-first workflow compares books before showing any edge.</li><li>Bankroll Guardian flags oversized stake exposure.</li><li>Bet journal measures closing-line value, not just wins and losses.</li><li>Outbound-only sportsbook model keeps BetForge focused on intelligence.</li></ul></Card></div>
   </div>;
