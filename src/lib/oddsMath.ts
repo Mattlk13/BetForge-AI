@@ -68,6 +68,7 @@ export function overround(odds: AmericanOdds[]): number {
 }
 
 export function devigMultiplicative(odds: AmericanOdds[]): number[] {
+  if (odds.length < 2) throw new Error("At least two outcomes are required");
   const raw = odds.map(impliedProbability);
   const total = raw.reduce((a, b) => a + b, 0);
   if (!(total > 0)) throw new Error("Market probability sum must be positive");
@@ -75,6 +76,7 @@ export function devigMultiplicative(odds: AmericanOdds[]): number[] {
 }
 
 export function devigAdditive(odds: AmericanOdds[]): number[] {
+  if (odds.length < 2) throw new Error("At least two outcomes are required");
   const raw = odds.map(impliedProbability);
   const excess = raw.reduce((a, b) => a + b, 0) - 1;
   const adjusted = raw.map(p => p - excess / raw.length);
@@ -84,6 +86,7 @@ export function devigAdditive(odds: AmericanOdds[]): number[] {
 }
 
 export function devigPower(odds: AmericanOdds[]): number[] {
+  if (odds.length < 2) throw new Error("At least two outcomes are required");
   const raw = odds.map(impliedProbability);
   let lo = 0.01;
   let hi = 10;

@@ -3,6 +3,8 @@ import {
   americanToDecimal,
   arbitrage,
   devigMultiplicative,
+  devigAdditive,
+  devigPower,
   expectedValue,
   fractionalKelly,
   impliedProbability,
@@ -11,6 +13,18 @@ import {
 } from "./oddsMath";
 
 describe("odds math", () => {
+  for (const devig of [devigMultiplicative,devigAdditive,devigPower]) {
+    it(`${devig.name} rejects incomplete markets`,()=>{
+      expect(()=>devig([])).toThrow("At least two outcomes are required");
+      expect(()=>devig([-110])).toThrow("At least two outcomes are required");
+    });
+    it(`${devig.name} returns finite normalized probabilities for a complete market`,()=>{
+      const fair=devig([-110,150,400]);
+      expect(fair).toHaveLength(3);
+      expect(fair.every(p=>Number.isFinite(p)&&p>0&&p<1)).toBe(true);
+      expect(fair.reduce((a,b)=>a+b,0)).toBeCloseTo(1,12);
+    });
+  }
   it("converts American odds", () => {
     expect(americanToDecimal(-110)).toBeCloseTo(1.9090909, 6);
     expect(americanToDecimal(150)).toBeCloseTo(2.5, 6);
